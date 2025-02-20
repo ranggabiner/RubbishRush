@@ -36,7 +36,7 @@ struct BackValidationView: View {
                     Button {
                         // Kosongkan navigationPath untuk kembali ke HomeView
                         homeViewModel.navigationPath = NavigationPath()
-                        gameViewModel.showPopup = false
+                        gameViewModel.showPopupBack = false
                         
                     } label: {
                         Text("YES")
@@ -73,7 +73,7 @@ struct BackValidationView: View {
                         .padding(.top, 20)
                     
                     Button {
-                        gameViewModel.showPopup = false
+                        gameViewModel.showPopupBack = false
                     } label: {
                         Text("NO")
                             .padding(.vertical, 16)
