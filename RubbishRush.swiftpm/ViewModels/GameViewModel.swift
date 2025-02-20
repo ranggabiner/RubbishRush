@@ -8,6 +8,7 @@
 import SwiftUI
 
 class GameViewModel: ObservableObject {
-    @Published var showPopup = false
+    @Published var showPopupBack = false
+    @Published var showPopupPause = false
     @Published var isPressed = false
 }

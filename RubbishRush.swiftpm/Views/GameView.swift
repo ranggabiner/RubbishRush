@@ -43,14 +43,16 @@ struct GameView: View {
             VStack {
                 HStack {
                     Button(action: {
-                        gameViewModel.showPopup = true
+                        gameViewModel.showPopupBack = true
                     }) {
                         Image(systemName: "arrowshape.backward.circle")
                             .foregroundStyle(.black)
                             .font(.system(size: 42))
                     }
                     Spacer()
-                    Button(action: {}) {
+                    Button(action: {
+                        gameViewModel.showPopupPause = true
+                    }) {
                         Image(systemName: "pause.circle")
                             .foregroundStyle(.black)
                             .font(.system(size: 42))
@@ -62,8 +64,12 @@ struct GameView: View {
                 Spacer()
             }
             
-            if gameViewModel.showPopup {
+            if gameViewModel.showPopupBack {
                 BackValidationView()
+            }
+            
+            if gameViewModel.showPopupPause {
+                PauseValidationView()
             }
         }
         .navigationBarBackButtonHidden()
