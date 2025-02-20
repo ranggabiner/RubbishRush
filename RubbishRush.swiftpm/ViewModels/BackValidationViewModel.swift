@@ -1,17 +1,16 @@
 //
-//  HomeViewModel.swift
+//  BackValidationViewModel.swift
 //  RubbishRush
 //
 //  Created by Rangga Biner on 20/02/25.
 //
 
+import Foundation
 import AVFoundation
-import SwiftUICore
-import SwiftUI
 
-class HomeViewModel: ObservableObject {
-    @Published var navigationPath = NavigationPath()
-    @Published var isPressed = false
+class BackValidationViewModel: ObservableObject {
+    @Published var isPressedYes = false
+    @Published var isPressedNo = false
     var audioPlayer: AVAudioPlayer?
 
     func playSound() {

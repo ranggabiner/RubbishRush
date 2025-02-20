@@ -8,12 +8,15 @@
 import SwiftUI
 
 struct GameView: View {
+    @EnvironmentObject var gameViewModel: GameViewModel
+    
     var body: some View {
         ZStack {
             Image("GameBackground")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
+            
             VStack {
                 Spacer()
                 HStack {
@@ -36,9 +39,12 @@ struct GameView: View {
                 }
                 .padding(.bottom, UIScreen.main.bounds.height / 40)
             }
+            
             VStack {
                 HStack {
-                    Button(action: {}) {
+                    Button(action: {
+                        gameViewModel.showPopup = true
+                    }) {
                         Image(systemName: "arrowshape.backward.circle")
                             .foregroundStyle(.black)
                             .font(.system(size: 42))
@@ -54,6 +60,10 @@ struct GameView: View {
                 .padding(.top)
                 .padding(.top, 48)
                 Spacer()
+            }
+            
+            if gameViewModel.showPopup {
+                BackValidationView()
             }
         }
         .navigationBarBackButtonHidden()
