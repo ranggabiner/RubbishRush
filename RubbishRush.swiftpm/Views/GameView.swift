@@ -6,6 +6,45 @@
 //
 
 import SwiftUI
+import AVFoundation
+
+// MARK: - SoundManager
+/// Mengelola pemutaran musik latar dan toggle suara.
+class SoundManager: ObservableObject {
+    @Published var isSoundOn: Bool = true  // Status suara aktif/tidak
+    var audioPlayer: AVAudioPlayer?
+    
+    /// Memulai pemutaran musik latar secara looping.
+    func playBackgroundMusic() {
+        // Hanya putar jika suara aktif dan file musik tersedia.
+        guard isSoundOn,
+              let url = Bundle.main.url(forResource: "guitar", withExtension: "mp3") else {
+            return
+        }
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.numberOfLoops = -1  // Loop tak terhingga
+            audioPlayer?.play()
+        } catch {
+            print("Error saat memainkan musik: \(error.localizedDescription)")
+        }
+    }
+    
+    /// Menghentikan musik latar.
+    func stopBackgroundMusic() {
+        audioPlayer?.stop()
+    }
+    
+    /// Mengubah status suara.
+    func toggleSound() {
+        isSoundOn.toggle()
+        if isSoundOn {
+            playBackgroundMusic()
+        } else {
+            stopBackgroundMusic()
+        }
+    }
+}
 
 // MARK: - Falling Object Types & Model
 
@@ -14,7 +53,7 @@ enum FallingObjectType: CaseIterable {
     case type1, type2, type3, type4
 }
 
-/// Ekstensi untuk menyediakan deskripsi teks dan daftar nama gambar untuk tiap jenis.
+/// Ekstensi untuk menyediakan deskripsi dan daftar nama gambar tiap tipe.
 extension FallingObjectType {
     var description: String {
         switch self {
@@ -25,7 +64,6 @@ extension FallingObjectType {
         }
     }
     
-    /// Array nama gambar yang tersedia untuk tiap tipe.
     var imageNames: [String] {
         switch self {
         case .type1:
@@ -46,7 +84,7 @@ struct FallingObject: Identifiable {
     var lane: Int                // Indeks lane (0 sampai lanesCount-1)
     var yPosition: CGFloat       // Posisi vertikal di layar
     var type: FallingObjectType  // Jenis objek
-    var imageName: String        // Nama gambar yang dipilih secara acak
+    var imageName: String        // Nama gambar yang dipilih acak
     
     init(lane: Int, yPosition: CGFloat, type: FallingObjectType) {
         self.lane = lane
@@ -58,8 +96,7 @@ struct FallingObject: Identifiable {
 }
 
 // MARK: - FallingObjectView
-
-/// View terpisah untuk menampilkan dan meng-handle drag gesture pada objek jatuh.
+/// View untuk menampilkan objek jatuh dan meng-handle drag gesture.
 struct FallingObjectView: View {
     @Binding var object: FallingObject      // Binding ke model objek jatuh
     let laneWidth: CGFloat                  // Lebar tiap lane
@@ -84,7 +121,7 @@ struct FallingObjectView: View {
                         // Update offset horizontal secara realtime saat drag.
                         dragOffset = value.translation.width
                     }
-                    .onEnded { value in
+                    .onEnded { _ in
                         // Hitung pergeseran lane berdasarkan offset drag.
                         let laneChange = Int(round(dragOffset / laneWidth))
                         // Update lane, pastikan nilai berada dalam batas yang valid.
@@ -97,18 +134,18 @@ struct FallingObjectView: View {
 }
 
 // MARK: - GameView
-
 /// Tampilan utama game yang mengintegrasikan background, objek jatuh, bins, dan overlay kontrol.
 struct GameView: View {
     @EnvironmentObject var gameViewModel: GameViewModel  // State game eksternal
+    @EnvironmentObject var soundManager: SoundManager    // Manajemen suara
     
-    // Konfigurasi game
+    // Konfigurasi game.
     let lanesCount: Int = 4         // Jumlah lane/kolom
     let objectSize: CGFloat = UIScreen.main.bounds.width / 8   // Ukuran objek jatuh
     let fallingSpeed: CGFloat = 3   // Kecepatan jatuh objek
     let maxHealth: CGFloat = 100    // Health maksimal
     
-    // Variabel state untuk objek jatuh, skor, dan health
+    // Variabel state untuk objek jatuh, skor, dan health.
     @State private var fallingObjects: [FallingObject] = [
         FallingObject(lane: 0, yPosition: -100, type: .type1),
         FallingObject(lane: 1, yPosition: -300, type: .type2),
@@ -119,12 +156,9 @@ struct GameView: View {
     
     // MARK: - Helper Functions
     
-    /// Menentukan lane yang tepat untuk suatu jenis objek (pemetaan: type1 → lane 0, dll).
+    /// Mengembalikan lane yang tepat untuk suatu jenis objek.
     private func correctLane(for type: FallingObjectType) -> Int {
-        if let index = FallingObjectType.allCases.firstIndex(of: type) {
-            return index
-        }
-        return 0
+        FallingObjectType.allCases.firstIndex(of: type) ?? 0
     }
     
     /// Mengembalikan lane acak, kecuali lane yang dikecualikan.
@@ -137,22 +171,21 @@ struct GameView: View {
     /// Fungsi untuk mereset game ke kondisi awal.
     private func resetGame() {
         gameViewModel.score = 0                      // Reset skor ke 0
-        health = maxHealth             // Reset health ke 100
+        health = maxHealth                           // Reset health ke 100
         
-        // Reset posisi awal objek jatuh
+        // Reset posisi awal objek jatuh.
         for index in fallingObjects.indices {
             fallingObjects[index].yPosition = -objectSize / 2 - CGFloat(index) * 200
             let correct = correctLane(for: fallingObjects[index].type)
-            // Pastikan lane awal tidak sama dengan lane yang benar
+            // Pastikan lane awal tidak sama dengan lane yang benar.
             fallingObjects[index].lane = randomLane(excluding: correct)
         }
         
-        // Sembunyikan popup game over
+        // Sembunyikan popup game over.
         gameViewModel.showPopupGameOver = false
     }
     
     // MARK: - Body
-    
     var body: some View {
         ZStack {
             // Background game.
@@ -165,33 +198,49 @@ struct GameView: View {
             GeometryReader { geometry in
                 let laneWidth = geometry.size.width / CGFloat(lanesCount)
                 let screenHeight = geometry.size.height
-                // Konstanta untuk mendefinisikan tinggi area bins.
-                let binsHeight: CGFloat = 120
+                let binsHeight: CGFloat = 120  // Tinggi area bins
                 
                 ZStack {
-                    // Tampilan skor dan health indicator di bagian atas.
+                    // Tampilan skor dan health indicator.
                     VStack(spacing: 10) {
+                        // Overlay kontrol: tombol pause dan tombol toggle suara.
                         HStack {
-                            VStack {
+                            // Tombol toggle suara (diletakkan di kiri atas).
+                            Button(action: {
+                                soundManager.toggleSound()
+                            }) {
+                                Image(systemName: soundManager.isSoundOn ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                                    .font(.system(size: 32))
+                                    .foregroundColor(.black)
+                            }
+                            Spacer()
+                            // Tombol pause (diletakkan di kanan atas).
+                            Button(action: { gameViewModel.showPopupPause = true }) {
+                                Image(systemName: "pause.circle")
+                                    .font(.system(size: 52))
+                                    .foregroundColor(.black)
+                            }
+                        }
+                        .padding(.horizontal, 28)
+                        
+                        HStack {
+                            VStack(alignment: .leading) {
                                 Text("High Score: \(gameViewModel.highScore)")
                                     .font(.system(size: 26))
                                     .fontWeight(.bold)
-
                                 Text("Score: \(gameViewModel.score)")
-                                .font(.system(size: 44))
-                                .fontWeight(.bold)
+                                    .font(.system(size: 44))
+                                    .fontWeight(.bold)
                             }
-                            
                             Spacer()
                         }
+                        
                         // Health indicator.
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
-                                // Latar belakang health bar.
                                 Rectangle()
                                     .frame(height: 10)
                                     .foregroundColor(.red)
-                                // Bar health yang menunjukkan sisa health.
                                 Rectangle()
                                     .frame(width: (health / maxHealth) * geo.size.width, height: 10)
                                     .foregroundColor(.green)
@@ -205,17 +254,16 @@ struct GameView: View {
                     .padding(20)
                     .padding(.top, UIScreen.main.bounds.height / 10)
                     
-                    // Render setiap objek jatuh menggunakan FallingObjectView.
+                    // Render setiap objek jatuh.
                     ForEach($fallingObjects) { $object in
                         FallingObjectView(object: $object, laneWidth: laneWidth, objectSize: objectSize, lanesCount: lanesCount)
                     }
                 }
-                // Inisialisasi posisi awal objek jatuh.
                 .onAppear {
+                    // Inisialisasi posisi objek jatuh.
                     for index in fallingObjects.indices {
                         fallingObjects[index].yPosition = -objectSize / 2 - CGFloat(index) * 200
                         let correct = correctLane(for: fallingObjects[index].type)
-                        // Pastikan lane awal bukan lane yang benar.
                         if fallingObjects[index].lane == correct {
                             fallingObjects[index].lane = randomLane(excluding: correct)
                         }
@@ -223,32 +271,24 @@ struct GameView: View {
                 }
                 // Timer untuk mengupdate posisi objek jatuh.
                 .onReceive(Timer.publish(every: 0.02, on: .main, in: .common).autoconnect()) { _ in
-                    // Hentikan update game ketika health habis.
-                    guard health > 0 else { return }
-                    guard gameViewModel.showPopupPause == false else { return }
-                    
+                    // Hentikan update objek jika game dalam keadaan pause atau health habis.
+                    guard health > 0, !gameViewModel.showPopupPause else { return }
                     for index in fallingObjects.indices {
                         fallingObjects[index].yPosition += fallingSpeed
-                        
-                        // Cek jika objek telah menyentuh area bins di bagian bawah.
                         if fallingObjects[index].yPosition + objectSize / 2 >= screenHeight - binsHeight {
                             let correct = correctLane(for: fallingObjects[index].type)
-                            // Jika objek berada pada lane yang tepat, tambah skor.
                             if fallingObjects[index].lane == correct {
                                 gameViewModel.score += 1
                                 if gameViewModel.score > gameViewModel.highScore {
                                     gameViewModel.highScore = gameViewModel.score
                                 }
                             } else {
-                                // Jika tidak tepat, kurangi health.
                                 health = max(health - 10, 0)
-                                // Saat health habis, perbarui high score jika perlu.
                                 if health == 0 {
                                     gameViewModel.showPopupGameOver = true
                                 }
                             }
-                            
-                            // Reset objek ke atas dengan tipe baru dan lane acak.
+                            // Reset objek jatuh.
                             fallingObjects[index].yPosition = -objectSize / 2
                             let newType = FallingObjectType.allCases.randomElement()!
                             fallingObjects[index].type = newType
@@ -283,28 +323,31 @@ struct GameView: View {
                 .padding(.bottom, UIScreen.main.bounds.height / 40)
             }
             
-            // Overlay atas dengan tombol pause.
-            VStack {
-                HStack {
-                    Spacer()
-                    Button(action: { gameViewModel.showPopupPause = true }) {
-                        Image(systemName: "pause.circle")
-                            .foregroundStyle(.black)
-                            .font(.system(size: 52))
-                    }
-                }
-                .padding(.horizontal, 28)
-                .padding(.top,  UIScreen.main.bounds.height / 11)
-                Spacer()
-            }
-            
-            // Pop-up validasi untuk pause dan gameover.
+            // Tampilkan popup pause dan game over tanpa memicu side effect di dalam body.
             if gameViewModel.showPopupPause {
                 PauseValidationView()
             }
             if gameViewModel.showPopupGameOver {
-                // Memasukkan fungsi restart ke dalam GameOverView.
                 GameOverView(onRestart: resetGame)
+            }
+        }
+        // Mulai musik latar saat tampilan muncul.
+        .onAppear {
+            soundManager.playBackgroundMusic()
+        }
+        // Gunakan onChange untuk menghentikan atau memulai musik berdasarkan status popup.
+        .onChange(of: gameViewModel.showPopupPause) { isPaused in
+            if isPaused {
+                soundManager.stopBackgroundMusic()
+            } else if soundManager.isSoundOn {
+                soundManager.playBackgroundMusic()
+            }
+        }
+        .onChange(of: gameViewModel.showPopupGameOver) { isGameOver in
+            if isGameOver {
+                soundManager.stopBackgroundMusic()
+            } else if soundManager.isSoundOn {
+                soundManager.playBackgroundMusic()
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -312,9 +355,10 @@ struct GameView: View {
 }
 
 // MARK: - Preview
-
 struct GameView_Previews: PreviewProvider {
     static var previews: some View {
-        GameView().environmentObject(GameViewModel())
+        GameView()
+            .environmentObject(GameViewModel())
+            .environmentObject(SoundManager())
     }
 }

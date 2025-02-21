@@ -6,6 +6,7 @@ struct MyApp: App {
     @StateObject private var gameViewModel = GameViewModel()
     @StateObject private var pauseValidationViewModel = PauseValidationViewModel()
     @StateObject private var gameOverValidationViewModel = GameOverValidationViewModel()
+    @StateObject private var soundManager = SoundManager()
 
     var body: some Scene {
         WindowGroup {
@@ -14,6 +15,8 @@ struct MyApp: App {
                 .environmentObject(gameViewModel)
                 .environmentObject(pauseValidationViewModel)
                 .environmentObject(gameOverValidationViewModel)
+                .environmentObject(soundManager)
+
         }
     }
 }
