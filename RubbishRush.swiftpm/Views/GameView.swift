@@ -14,14 +14,28 @@ enum FallingObjectType: CaseIterable {
     case type1, type2, type3, type4
 }
 
-/// Ekstensi untuk menyediakan deskripsi teks untuk tiap jenis.
+/// Ekstensi untuk menyediakan deskripsi teks dan daftar nama gambar untuk tiap jenis.
 extension FallingObjectType {
     var description: String {
         switch self {
-        case .type1: return "Type 1"
-        case .type2: return "Type 2"
-        case .type3: return "Type 3"
-        case .type4: return "Type 4"
+        case .type1: return "Organic"
+        case .type2: return "Glass"
+        case .type3: return "Plastic"
+        case .type4: return "Paper"
+        }
+    }
+    
+    /// Array nama gambar yang tersedia untuk tiap tipe.
+    var imageNames: [String] {
+        switch self {
+        case .type1:
+            return ["AppleTrash", "BananaTrash", "ChickenTrash", "FishTrash", "WatermelonTrash"]
+        case .type2:
+            return ["BottleGlassTrash", "GlassCrackTrash", "GlassTrash", "PlateTrash", "LampTrash"]
+        case .type3:
+            return ["FaceWashTrash", "InfusionBottle", "PlasticBagTrash", "PlasticBottleTrash", "PlasticGlassTrash"]
+        case .type4:
+            return ["BookTrash", "MagazineTrash", "MailTrash", "PaperBoxTrash", "SmallPaperBoxTrash"]
         }
     }
 }
@@ -32,6 +46,15 @@ struct FallingObject: Identifiable {
     var lane: Int                // Indeks lane (0 sampai lanesCount-1)
     var yPosition: CGFloat       // Posisi vertikal di layar
     var type: FallingObjectType  // Jenis objek
+    var imageName: String        // Nama gambar yang dipilih secara acak
+    
+    init(lane: Int, yPosition: CGFloat, type: FallingObjectType) {
+        self.lane = lane
+        self.yPosition = yPosition
+        self.type = type
+        // Pilih gambar secara acak dari daftar gambar yang tersedia untuk tipe tersebut.
+        self.imageName = type.imageNames.randomElement() ?? ""
+    }
 }
 
 // MARK: - GameView
@@ -42,7 +65,7 @@ struct GameView: View {
     
     // Konfigurasi game
     let lanesCount: Int = 4         // Jumlah lane/kolom
-    let objectSize: CGFloat = 100   // Diameter objek jatuh
+    let objectSize: CGFloat = UIScreen.main.bounds.width / 8   // Ukuran objek jatuh
     let fallingSpeed: CGFloat = 3   // Kecepatan jatuh objek
     let maxHealth: CGFloat = 100    // Health maksimal
     
@@ -57,16 +80,6 @@ struct GameView: View {
     @State private var health: CGFloat = 100  // Health awal
     
     // MARK: - Helper Functions
-    
-    /// Mengembalikan warna berdasarkan jenis objek.
-    private func colorForObjectType(_ type: FallingObjectType) -> Color {
-        switch type {
-        case .type1: return .green
-        case .type2: return .red
-        case .type3: return .blue
-        case .type4: return .yellow
-        }
-    }
     
     /// Menentukan lane yang tepat untuk suatu jenis objek (pemetaan: type1 → lane 0, dll).
     private func correctLane(for type: FallingObjectType) -> Int {
@@ -123,17 +136,17 @@ struct GameView: View {
                         Text("Score: \(score)")
                             .font(.largeTitle)
                         
-                        // Health indicator horizontal
+                        // Health indicator horizontal.
                         HStack {
                             Text("Health")
                                 .font(.caption)
                             GeometryReader { geo in
                                 ZStack(alignment: .leading) {
-                                    // Latar belakang health bar
+                                    // Latar belakang health bar.
                                     Rectangle()
                                         .frame(height: 10)
                                         .foregroundColor(Color.gray.opacity(0.3))
-                                    // Bar health yang menunjukkan sisa health
+                                    // Bar health yang menunjukkan sisa health.
                                     Rectangle()
                                         .frame(width: (health / maxHealth) * geo.size.width, height: 10)
                                         .foregroundColor(.green)
@@ -148,31 +161,12 @@ struct GameView: View {
                     }
                     .padding(.top, 100)
                     
-                    // Gambar pembagi lane dan label lane.
-                    ForEach(0..<lanesCount, id: \.self) { index in
-                        // Garis pembagi lane.
-                        Path { path in
-                            let xPosition = laneWidth * CGFloat(index)
-                            path.move(to: CGPoint(x: xPosition, y: 0))
-                            path.addLine(to: CGPoint(x: xPosition, y: screenHeight))
-                        }
-                        .stroke(Color.gray, lineWidth: 1)
-                        
-                        // Label lane (hanya jika index valid untuk tipe objek).
-                        if index < FallingObjectType.allCases.count {
-                            let laneType = FallingObjectType.allCases[index]
-                            Text(laneType.description)
-                                .font(.caption)
-                                .foregroundColor(colorForObjectType(laneType))
-                                .position(x: laneWidth * (CGFloat(index) + 0.5), y: 20)
-                        }
-                    }
-                    
-                    // Render setiap objek jatuh.
+                    // Render setiap objek jatuh sebagai image.
                     ForEach($fallingObjects) { $object in
-                        Circle()
-                            .fill(colorForObjectType(object.type))
-                            .frame(width: objectSize, height: objectSize)
+                        Image(object.imageName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: objectSize)
                             .position(x: laneWidth * (CGFloat(object.lane) + 0.5), y: object.yPosition)
                             // Gesture swipe untuk mengubah lane.
                             .gesture(
@@ -200,7 +194,7 @@ struct GameView: View {
                 }
                 // Timer untuk mengupdate posisi objek jatuh.
                 .onReceive(Timer.publish(every: 0.02, on: .main, in: .common).autoconnect()) { _ in
-                    // Hentikan update game ketika health habis
+                    // Hentikan update game ketika health habis.
                     guard health > 0 else { return }
                     guard gameViewModel.showPopupPause == false else { return }
                     
@@ -224,8 +218,12 @@ struct GameView: View {
                             
                             // Reset objek ke atas dengan tipe baru dan lane acak (kecuali lane yang benar).
                             fallingObjects[index].yPosition = -objectSize / 2
-                            fallingObjects[index].type = FallingObjectType.allCases.randomElement()!
-                            fallingObjects[index].lane = randomLane(excluding: correctLane(for: fallingObjects[index].type))
+                            // Pilih tipe acak.
+                            let newType = FallingObjectType.allCases.randomElement()!
+                            fallingObjects[index].type = newType
+                            // Pilih gambar acak untuk tipe yang baru.
+                            fallingObjects[index].imageName = newType.imageNames.randomElement()!
+                            fallingObjects[index].lane = randomLane(excluding: correctLane(for: newType))
                         }
                     }
                 }
@@ -275,7 +273,7 @@ struct GameView: View {
                 PauseValidationView()
             }
             if gameViewModel.showPopupGameOver {
-                // Memasukkan fungsi restart ke dalam GameOverView
+                // Memasukkan fungsi restart ke dalam GameOverView.
                 GameOverView(onRestart: resetGame)
             }
         }
