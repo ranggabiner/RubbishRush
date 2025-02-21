@@ -10,6 +10,7 @@ import AVFoundation
 
 class PauseValidationViewModel: ObservableObject {
     @Published var isPressedContinue = false
+    @Published var isPressedBackToHome = false
     var audioPlayer: AVAudioPlayer?
 
     func playSound() {

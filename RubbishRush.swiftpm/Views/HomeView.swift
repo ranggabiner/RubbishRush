@@ -42,6 +42,8 @@ struct HomeView: View {
                             .font(.system(size: 32, weight: .heavy))
                             .cornerRadius(32)
                             .padding(.bottom, UIScreen.main.bounds.height / 5.6)
+                            .scaleEffect(homeViewModel.isPressed ? 0.9 : 1.0)
+                            .animation(.easeInOut(duration: 0.2), value: homeViewModel.isPressed)
 
                         NavigationLink(value: "GameView") {
                             Text("PLAY")

@@ -1,14 +1,17 @@
 //
-//  BackValidationView.swift
+//  GameOverView.swift
 //  RubbishRush
 //
-//  Created by Rangga Biner on 20/02/25.
+//  Created by Rangga Biner on 21/02/25.
 //
 
 import SwiftUI
+import AVFoundation
 
-struct BackValidationView: View {
-    @EnvironmentObject var backValidationViewModel: BackValidationViewModel
+/// Tampilan popup Game Over dengan tombol restart dan kembali ke home.
+struct GameOverView: View {
+    var onRestart: () -> Void  // Closure yang akan dipanggil ketika restart ditekan
+    @EnvironmentObject var gameOverValidationViewModel: GameOverValidationViewModel
     @EnvironmentObject var homeViewModel: HomeViewModel
     @EnvironmentObject var gameViewModel: GameViewModel
 
@@ -16,15 +19,15 @@ struct BackValidationView: View {
         ZStack {
             Color.black.opacity(0.5)
                 .ignoresSafeArea()
-            
             VStack {
-                Text("You want to quit?")
+                Text("GAME OVER")
                     .foregroundStyle(.white)
                     .font(.system(size: 70, weight: .bold))
                     .padding(.bottom, 45)
                 
                 ZStack {
-                    Text("YES")
+                    // Teks tombol restart sebagai background
+                    Text("RESTART")
                         .padding(.vertical, 16)
                         .padding(.horizontal, 78)
                         .background(Color("greenSecondary"))
@@ -32,14 +35,14 @@ struct BackValidationView: View {
                         .font(.system(size: 32, weight: .heavy))
                         .cornerRadius(32)
                         .padding(.top, 9)
+                        .scaleEffect(gameOverValidationViewModel.isPressedRestart ? 0.9 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: gameOverValidationViewModel.isPressedRestart)
                     
+                    // Tombol restart yang memanggil onRestart()
                     Button {
-                        // Kosongkan navigationPath untuk kembali ke HomeView
-                        homeViewModel.navigationPath = NavigationPath()
-                        gameViewModel.showPopupBack = false
-                        
+                        onRestart()
                     } label: {
-                        Text("YES")
+                        Text("RESTART")
                             .padding(.vertical, 16)
                             .padding(.horizontal, 78)
                             .background(Color("greenPrimary"))
@@ -47,56 +50,61 @@ struct BackValidationView: View {
                             .font(.system(size: 32, weight: .heavy))
                             .cornerRadius(32)
                             .padding(.bottom)
-                            .scaleEffect(backValidationViewModel.isPressedYes ? 0.9 : 1.0)
-                            .animation(.easeInOut(duration: 0.2), value: backValidationViewModel.isPressedYes)
+                            .scaleEffect(gameOverValidationViewModel.isPressedRestart ? 0.9 : 1.0)
+                            .animation(.easeInOut(duration: 0.2), value: gameOverValidationViewModel.isPressedRestart)
                     }
                 }
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { _ in
-                            backValidationViewModel.isPressedYes = true
+                            gameOverValidationViewModel.isPressedRestart = true
                         }
                         .onEnded { _ in
-                            backValidationViewModel.isPressedYes = false
-                            backValidationViewModel.playSound()
+                            gameOverValidationViewModel.isPressedRestart = false
+                            gameOverValidationViewModel.playSound()
                         }
                 )
                 
                 ZStack {
-                    Text("NO")
+                    Text("BACK TO HOME")
                         .padding(.vertical, 16)
                         .padding(.horizontal, 78)
-                        .background(Color("greenSecondary"))
+                        .background(Color("yellowSecondary"))
                         .foregroundColor(.clear)
                         .font(.system(size: 32, weight: .heavy))
                         .cornerRadius(32)
                         .padding(.top, 20)
+                        .scaleEffect(gameOverValidationViewModel.isPressedBackToHome ? 0.9 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: gameOverValidationViewModel.isPressedBackToHome)
                     
                     Button {
-                        gameViewModel.showPopupBack = false
+                        // Kosongkan navigationPath untuk kembali ke HomeView
+                        homeViewModel.navigationPath = NavigationPath()
+                        gameViewModel.showPopupGameOver = false
                     } label: {
-                        Text("NO")
+                        Text("BACK TO HOME")
                             .padding(.vertical, 16)
                             .padding(.horizontal, 78)
-                            .background(Color("greenPrimary"))
+                            .background(Color("yellowPrimary"))
                             .foregroundColor(.white)
                             .font(.system(size: 32, weight: .heavy))
                             .cornerRadius(32)
-                            .scaleEffect(backValidationViewModel.isPressedNo ? 0.9 : 1.0)
-                            .animation(.easeInOut(duration: 0.2), value: backValidationViewModel.isPressedNo)
+                            .scaleEffect(gameOverValidationViewModel.isPressedBackToHome ? 0.9 : 1.0)
+                            .animation(.easeInOut(duration: 0.2), value: gameOverValidationViewModel.isPressedBackToHome)
                     }
                 }
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { _ in
-                            backValidationViewModel.isPressedNo = true
+                            gameOverValidationViewModel.isPressedBackToHome = true
                         }
                         .onEnded { _ in
-                            backValidationViewModel.isPressedNo = false
-                            backValidationViewModel.playSound()
+                            gameOverValidationViewModel.isPressedBackToHome = false
+                            gameOverValidationViewModel.playSound()
                         }
                 )
             }
         }
     }
 }
+

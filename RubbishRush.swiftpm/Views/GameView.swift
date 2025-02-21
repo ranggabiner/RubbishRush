@@ -83,6 +83,23 @@ struct GameView: View {
         return availableLanes.randomElement()!
     }
     
+    /// Fungsi untuk mereset game ke kondisi awal.
+    private func resetGame() {
+        score = 0                      // Reset skor ke 0
+        health = maxHealth             // Reset health ke 100
+        
+        // Reset posisi awal objek jatuh
+        for index in fallingObjects.indices {
+            fallingObjects[index].yPosition = -objectSize / 2 - CGFloat(index) * 200
+            let correct = correctLane(for: fallingObjects[index].type)
+            // Pastikan lane awal tidak sama dengan lane yang benar
+            fallingObjects[index].lane = randomLane(excluding: correct)
+        }
+        
+        // Sembunyikan popup game over
+        gameViewModel.showPopupGameOver = false
+    }
+    
     // MARK: - Body
     
     var body: some View {
@@ -185,6 +202,7 @@ struct GameView: View {
                 .onReceive(Timer.publish(every: 0.02, on: .main, in: .common).autoconnect()) { _ in
                     // Hentikan update game ketika health habis
                     guard health > 0 else { return }
+                    guard gameViewModel.showPopupPause == false else { return }
                     
                     for index in fallingObjects.indices {
                         fallingObjects[index].yPosition += fallingSpeed
@@ -200,7 +218,7 @@ struct GameView: View {
                                 health = max(health - 10, 0)
                                 // Tampilkan popup game over ketika health habis.
                                 if health == 0 {
-                                    gameViewModel.showPopupBack = true
+                                    gameViewModel.showPopupGameOver = true
                                 }
                             }
                             
@@ -237,14 +255,9 @@ struct GameView: View {
                 .padding(.bottom, UIScreen.main.bounds.height / 40)
             }
             
-            // Overlay atas dengan tombol back dan pause.
+            // Overlay atas dengan tombol pause.
             VStack {
                 HStack {
-                    Button(action: { gameViewModel.showPopupBack = true }) {
-                        Image(systemName: "arrowshape.backward.circle")
-                            .foregroundStyle(.black)
-                            .font(.system(size: 42))
-                    }
                     Spacer()
                     Button(action: { gameViewModel.showPopupPause = true }) {
                         Image(systemName: "pause.circle")
@@ -257,12 +270,13 @@ struct GameView: View {
                 Spacer()
             }
             
-            // Pop-up validasi untuk back dan pause.
-            if gameViewModel.showPopupBack {
-                BackValidationView()
-            }
+            // Pop-up validasi untuk pause dan gameover.
             if gameViewModel.showPopupPause {
                 PauseValidationView()
+            }
+            if gameViewModel.showPopupGameOver {
+                // Memasukkan fungsi restart ke dalam GameOverView
+                GameOverView(onRestart: resetGame)
             }
         }
         .navigationBarBackButtonHidden(true)
