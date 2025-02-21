@@ -10,6 +10,7 @@ import AVFoundation
 
 struct HomeView: View {
     @EnvironmentObject var homeViewModel: HomeViewModel
+    @EnvironmentObject var gameViewModel: GameViewModel
 
     var body: some View {
         NavigationStack(path: $homeViewModel.navigationPath) {
@@ -23,15 +24,17 @@ struct HomeView: View {
                     Text("RUBBISH \n RUSH")
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.black)
-                        .font(.system(size: 32, weight: .black))
+                        .font(.title)
+                        .fontWeight(.bold)
                         .italic()
                         .padding(.top, UIScreen.main.bounds.height / 9)
                         .padding(.bottom)
                     
-                    Text("High Score \n 480")
+                    Text("High Score \n \(gameViewModel.highScore)")
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.white)
-                        .font(.system(size: 32, weight: .black))
+                        .font(.largeTitle)
+                        .fontWeight(.heavy)
                     Spacer()
                     ZStack {
                         Text("PLAY")

@@ -79,6 +79,8 @@ struct GameView: View {
     @State private var score: Int = 0
     @State private var health: CGFloat = 100  // Health awal
     
+    // Menggunakan @AppStorage untuk menyimpan high score secara otomatis ke UserDefaults.
+    
     // MARK: - Helper Functions
     
     /// Menentukan lane yang tepat untuk suatu jenis objek (pemetaan: type1 → lane 0, dll).
@@ -133,32 +135,36 @@ struct GameView: View {
                 ZStack {
                     // Tampilan skor dan health indicator di bagian atas.
                     VStack(spacing: 10) {
-                        Text("Score: \(score)")
-                            .font(.largeTitle)
-                        
-                        // Health indicator horizontal.
                         HStack {
-                            Text("Health")
-                                .font(.caption)
-                            GeometryReader { geo in
-                                ZStack(alignment: .leading) {
-                                    // Latar belakang health bar.
-                                    Rectangle()
-                                        .frame(height: 10)
-                                        .foregroundColor(Color.gray.opacity(0.3))
-                                    // Bar health yang menunjukkan sisa health.
-                                    Rectangle()
-                                        .frame(width: (health / maxHealth) * geo.size.width, height: 10)
-                                        .foregroundColor(.green)
-                                }
-                                .cornerRadius(5)
+                            VStack {
+                                Text("High Score: \(gameViewModel.highScore)")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                Text("Score: \(score)")
+                                    .font(.largeTitle)
+                                    .fontWeight(.heavy)
                             }
-                            .frame(height: 10)
+                            Spacer()
                         }
-                        .padding(.horizontal, 20)
+                        // Health indicator.
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                // Latar belakang health bar.
+                                Rectangle()
+                                    .frame(height: 10)
+                                    .foregroundColor(.red)
+                                // Bar health yang menunjukkan sisa health.
+                                Rectangle()
+                                    .frame(width: (health / maxHealth) * geo.size.width, height: 10)
+                                    .foregroundColor(.green)
+                            }
+                            .cornerRadius(5)
+                        }
+                        .frame(height: 10)
                         
                         Spacer()
                     }
+                    .padding(20)
                     .padding(.top, 100)
                     
                     // Render setiap objek jatuh sebagai image.
@@ -207,10 +213,14 @@ struct GameView: View {
                             // Jika objek berada pada lane yang tepat, tambah skor.
                             if fallingObjects[index].lane == correct {
                                 score += 1
+                                if score > gameViewModel.highScore {
+                                    gameViewModel.highScore = score
+                                }
+
                             } else {
                                 // Jika tidak tepat, kurangi health.
                                 health = max(health - 10, 0)
-                                // Tampilkan popup game over ketika health habis.
+                                // Saat health habis, perbarui high score jika perlu.
                                 if health == 0 {
                                     gameViewModel.showPopupGameOver = true
                                 }
@@ -260,7 +270,7 @@ struct GameView: View {
                     Button(action: { gameViewModel.showPopupPause = true }) {
                         Image(systemName: "pause.circle")
                             .foregroundStyle(.black)
-                            .font(.system(size: 42))
+                            .font(.system(size: 52))
                     }
                 }
                 .padding(.horizontal, 28)
