@@ -57,6 +57,45 @@ struct FallingObject: Identifiable {
     }
 }
 
+// MARK: - FallingObjectView
+
+/// View terpisah untuk menampilkan dan meng-handle drag gesture pada objek jatuh.
+struct FallingObjectView: View {
+    @Binding var object: FallingObject      // Binding ke model objek jatuh
+    let laneWidth: CGFloat                  // Lebar tiap lane
+    let objectSize: CGFloat                 // Ukuran objek
+    let lanesCount: Int                     // Jumlah total lane
+
+    @State private var dragOffset: CGFloat = 0   // Offset horizontal saat drag
+
+    var body: some View {
+        Image(object.imageName)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(width: objectSize)
+            // Posisi dihitung berdasarkan lane center + offset saat drag.
+            .position(
+                x: laneWidth * (CGFloat(object.lane) + 0.5) + dragOffset,
+                y: object.yPosition
+            )
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        // Update offset horizontal secara realtime saat drag.
+                        dragOffset = value.translation.width
+                    }
+                    .onEnded { value in
+                        // Hitung pergeseran lane berdasarkan offset drag.
+                        let laneChange = Int(round(dragOffset / laneWidth))
+                        // Update lane, pastikan nilai berada dalam batas yang valid.
+                        object.lane = min(max(object.lane + laneChange, 0), lanesCount - 1)
+                        // Reset drag offset.
+                        dragOffset = 0
+                    }
+            )
+    }
+}
+
 // MARK: - GameView
 
 /// Tampilan utama game yang mengintegrasikan background, objek jatuh, bins, dan overlay kontrol.
@@ -78,8 +117,6 @@ struct GameView: View {
     ]
     @State private var score: Int = 0
     @State private var health: CGFloat = 100  // Health awal
-    
-    // Menggunakan @AppStorage untuk menyimpan high score secara otomatis ke UserDefaults.
     
     // MARK: - Helper Functions
     
@@ -129,7 +166,7 @@ struct GameView: View {
             GeometryReader { geometry in
                 let laneWidth = geometry.size.width / CGFloat(lanesCount)
                 let screenHeight = geometry.size.height
-                // Konstanta untuk mendefinisikan tinggi area bins (disesuaikan jika perlu)
+                // Konstanta untuk mendefinisikan tinggi area bins.
                 let binsHeight: CGFloat = 120
                 
                 ZStack {
@@ -167,24 +204,9 @@ struct GameView: View {
                     .padding(20)
                     .padding(.top, 100)
                     
-                    // Render setiap objek jatuh sebagai image.
+                    // Render setiap objek jatuh menggunakan FallingObjectView.
                     ForEach($fallingObjects) { $object in
-                        Image(object.imageName)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: objectSize)
-                            .position(x: laneWidth * (CGFloat(object.lane) + 0.5), y: object.yPosition)
-                            // Gesture swipe untuk mengubah lane.
-                            .gesture(
-                                DragGesture(minimumDistance: 20)
-                                    .onEnded { value in
-                                        if value.translation.width < -30, object.lane > 0 {
-                                            object.lane -= 1  // Swipe ke kiri.
-                                        } else if value.translation.width > 30, object.lane < lanesCount - 1 {
-                                            object.lane += 1  // Swipe ke kanan.
-                                        }
-                                    }
-                            )
+                        FallingObjectView(object: $object, laneWidth: laneWidth, objectSize: objectSize, lanesCount: lanesCount)
                     }
                 }
                 // Inisialisasi posisi awal objek jatuh.
@@ -216,7 +238,6 @@ struct GameView: View {
                                 if score > gameViewModel.highScore {
                                     gameViewModel.highScore = score
                                 }
-
                             } else {
                                 // Jika tidak tepat, kurangi health.
                                 health = max(health - 10, 0)
@@ -226,12 +247,10 @@ struct GameView: View {
                                 }
                             }
                             
-                            // Reset objek ke atas dengan tipe baru dan lane acak (kecuali lane yang benar).
+                            // Reset objek ke atas dengan tipe baru dan lane acak.
                             fallingObjects[index].yPosition = -objectSize / 2
-                            // Pilih tipe acak.
                             let newType = FallingObjectType.allCases.randomElement()!
                             fallingObjects[index].type = newType
-                            // Pilih gambar acak untuk tipe yang baru.
                             fallingObjects[index].imageName = newType.imageNames.randomElement()!
                             fallingObjects[index].lane = randomLane(excluding: correctLane(for: newType))
                         }
