@@ -115,7 +115,6 @@ struct GameView: View {
         FallingObject(lane: 2, yPosition: -500, type: .type3),
         FallingObject(lane: 3, yPosition: -700, type: .type4)
     ]
-    @State private var score: Int = 0
     @State private var health: CGFloat = 100  // Health awal
     
     // MARK: - Helper Functions
@@ -137,7 +136,7 @@ struct GameView: View {
     
     /// Fungsi untuk mereset game ke kondisi awal.
     private func resetGame() {
-        score = 0                      // Reset skor ke 0
+        gameViewModel.score = 0                      // Reset skor ke 0
         health = maxHealth             // Reset health ke 100
         
         // Reset posisi awal objek jatuh
@@ -175,12 +174,14 @@ struct GameView: View {
                         HStack {
                             VStack {
                                 Text("High Score: \(gameViewModel.highScore)")
-                                    .font(.title2)
+                                    .font(.system(size: 26))
                                     .fontWeight(.bold)
-                                Text("Score: \(score)")
-                                    .font(.largeTitle)
-                                    .fontWeight(.heavy)
+
+                                Text("Score: \(gameViewModel.score)")
+                                .font(.system(size: 44))
+                                .fontWeight(.bold)
                             }
+                            
                             Spacer()
                         }
                         // Health indicator.
@@ -202,7 +203,7 @@ struct GameView: View {
                         Spacer()
                     }
                     .padding(20)
-                    .padding(.top, 100)
+                    .padding(.top, UIScreen.main.bounds.height / 10)
                     
                     // Render setiap objek jatuh menggunakan FallingObjectView.
                     ForEach($fallingObjects) { $object in
@@ -234,9 +235,9 @@ struct GameView: View {
                             let correct = correctLane(for: fallingObjects[index].type)
                             // Jika objek berada pada lane yang tepat, tambah skor.
                             if fallingObjects[index].lane == correct {
-                                score += 1
-                                if score > gameViewModel.highScore {
-                                    gameViewModel.highScore = score
+                                gameViewModel.score += 1
+                                if gameViewModel.score > gameViewModel.highScore {
+                                    gameViewModel.highScore = gameViewModel.score
                                 }
                             } else {
                                 // Jika tidak tepat, kurangi health.
@@ -293,7 +294,7 @@ struct GameView: View {
                     }
                 }
                 .padding(.horizontal, 28)
-                .padding(.top, 48)
+                .padding(.top,  UIScreen.main.bounds.height / 11)
                 Spacer()
             }
             

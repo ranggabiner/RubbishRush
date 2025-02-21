@@ -24,17 +24,18 @@ struct HomeView: View {
                     Text("RUBBISH \n RUSH")
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.black)
-                        .font(.title)
-                        .fontWeight(.bold)
+                        .font(.system(size: 32))
                         .italic()
-                        .padding(.top, UIScreen.main.bounds.height / 9)
+                        .fontWeight(.black)
                         .padding(.bottom)
+                        .padding(.top, UIScreen.main.bounds.height / 10.6)
                     
                     Text("High Score \n \(gameViewModel.highScore)")
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.white)
                         .font(.largeTitle)
                         .fontWeight(.heavy)
+                    
                     Spacer()
                     ZStack {
                         Text("PLAY")

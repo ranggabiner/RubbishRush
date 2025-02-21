@@ -20,11 +20,30 @@ struct GameOverView: View {
             Color.black.opacity(0.5)
                 .ignoresSafeArea()
             VStack {
+                Spacer()
                 Text("GAME OVER")
                     .foregroundStyle(.white)
-                    .font(.system(size: 70, weight: .bold))
-                    .padding(.bottom, 45)
+                    .font(.system(size: 70, weight: .heavy))
+                    .padding(.bottom, 127)
+
+                Text("HIGH SCORE")
+                    .foregroundStyle(.white)
+                    .font(.system(size: 30, weight: .medium))
                 
+                Text("\(gameViewModel.highScore)")
+                    .foregroundStyle(.white)
+                    .font(.system(size: 60, weight: .medium))
+                    .padding(.bottom, 52)
+                    
+                Text("MY SCORE")
+                    .foregroundStyle(.white)
+                    .font(.system(size: 60, weight: .medium))
+                
+                Text("\(gameViewModel.score)")
+                    .foregroundStyle(.white)
+                    .font(.system(size: 90, weight: .medium))
+                    .padding(.bottom, 127)
+
                 ZStack {
                     // Teks tombol restart sebagai background
                     Text("RESTART")
@@ -103,6 +122,9 @@ struct GameOverView: View {
                             gameOverValidationViewModel.playSound()
                         }
                 )
+                
+                Spacer()
+
             }
         }
     }
