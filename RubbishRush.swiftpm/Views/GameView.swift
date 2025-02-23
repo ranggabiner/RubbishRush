@@ -11,13 +11,15 @@ import AVFoundation
 struct GameView: View {
     @EnvironmentObject var gameViewModel: GameViewModel
     @EnvironmentObject var soundManager: SoundManager
-    
 
     let lanesCount: Int = 4
     let objectSize: CGFloat = UIScreen.main.bounds.width / 8
     let fallingSpeed: CGFloat = 3
     let maxHealth: CGFloat = 100
-
+    
+    @State private var showPlusOne: [Bool] = Array(repeating: false, count: 4)
+    @State private var showWrong: [Bool] = Array(repeating: false, count: 4)
+    
     @State private var fallingObjects: [FallingObject] = [
         FallingObject(lane: 0, yPosition: -100, type: .type1),
         FallingObject(lane: 1, yPosition: -300, type: .type2),
@@ -47,6 +49,32 @@ struct GameView: View {
         }
         
         gameViewModel.showPopupGameOver = false
+    }
+    
+    private func triggerPlusOne(for lane: Int) {
+        withAnimation {
+            showPlusOne[lane] = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            withAnimation {
+                showPlusOne[lane] = false
+            }
+        }
+    }
+    
+    private func triggerWrong(for lane: Int) {
+        withAnimation {
+            showWrong[lane] = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            withAnimation {
+                showWrong[lane] = false
+            }
+        }
+    }
+    
+    private var binImages: [String] {
+        ["OrganicBin", "GlassBin", "PlasticBin", "PaperBin"]
     }
     
     var body: some View {
@@ -130,15 +158,19 @@ struct GameView: View {
                         if fallingObjects[index].yPosition + objectSize / 2 >= screenHeight - binsHeight {
                             let correct = correctLane(for: fallingObjects[index].type)
                             if fallingObjects[index].lane == correct {
+                                triggerPlusOne(for: correct)
                                 gameViewModel.score += 1
                                 if gameViewModel.score > gameViewModel.highScore {
                                     gameViewModel.highScore = gameViewModel.score
                                 }
+                                soundManager.playCorrectSound()
                             } else {
                                 health = max(health - 10, 0)
+                                triggerWrong(for: fallingObjects[index].lane)
                                 if health == 0 {
                                     gameViewModel.showPopupGameOver = true
                                 }
+                                soundManager.playIncorrectSound()
                             }
                             fallingObjects[index].yPosition = -objectSize / 2
                             let newType = FallingObjectType.allCases.randomElement()!
@@ -153,22 +185,32 @@ struct GameView: View {
             VStack {
                 Spacer()
                 HStack {
-                    Image("OrganicBin")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: UIScreen.main.bounds.width / 4.2)
-                    Image("GlassBin")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: UIScreen.main.bounds.width / 4.2)
-                    Image("PlasticBin")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: UIScreen.main.bounds.width / 4.2)
-                    Image("PaperBin")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: UIScreen.main.bounds.width / 4.2)
+                    ForEach(0..<lanesCount, id: \.self) { lane in
+                        ZStack {
+                            Image(binImages[lane])
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: UIScreen.main.bounds.width / 4.2)
+                            if showPlusOne[lane] {
+                                Text("+1")
+                                    .font(.system(size: 50))
+                                    .fontWeight(.heavy)
+                                    .foregroundColor(.white)
+                                    .transition(.move(edge: .top).combined(with: .opacity))
+                                    .animation(.easeOut(duration: 0.5), value: showPlusOne[lane])
+                                    .offset(y: -60)
+                            }
+                            if showWrong[lane] {
+                                Text("X")
+                                    .font(.system(size: 50))
+                                    .fontWeight(.heavy)
+                                    .foregroundColor(.white)
+                                    .transition(.move(edge: .top).combined(with: .opacity))
+                                    .animation(.easeOut(duration: 0.5), value: showWrong[lane])
+                                    .offset(y: -60)
+                            }
+                        }
+                    }
                 }
                 .padding(.bottom, UIScreen.main.bounds.height / 40)
             }
@@ -200,7 +242,6 @@ struct GameView: View {
         .navigationBarBackButtonHidden(true)
     }
 }
-
 
 #Preview {
     GameView()

@@ -8,9 +8,8 @@
 import SwiftUI
 import AVFoundation
 
-/// Tampilan popup Game Over dengan tombol restart dan kembali ke home.
 struct GameOverView: View {
-    var onRestart: () -> Void  // Closure yang akan dipanggil ketika restart ditekan
+    var onRestart: () -> Void
     @EnvironmentObject var gameOverValidationViewModel: GameOverValidationViewModel
     @EnvironmentObject var homeViewModel: HomeViewModel
     @EnvironmentObject var gameViewModel: GameViewModel
@@ -45,7 +44,6 @@ struct GameOverView: View {
                     .padding(.bottom, 127)
 
                 ZStack {
-                    // Teks tombol restart sebagai background
                     Text("RESTART")
                         .padding(.vertical, 16)
                         .padding(.horizontal, 78)
@@ -57,7 +55,6 @@ struct GameOverView: View {
                         .scaleEffect(gameOverValidationViewModel.isPressedRestart ? 0.9 : 1.0)
                         .animation(.easeInOut(duration: 0.2), value: gameOverValidationViewModel.isPressedRestart)
                     
-                    // Tombol restart yang memanggil onRestart()
                     Button {
                         onRestart()
                     } label: {
@@ -97,7 +94,6 @@ struct GameOverView: View {
                         .animation(.easeInOut(duration: 0.2), value: gameOverValidationViewModel.isPressedBackToHome)
                     
                     Button {
-                        // Kosongkan navigationPath untuk kembali ke HomeView
                         homeViewModel.navigationPath = NavigationPath()
                         gameViewModel.showPopupGameOver = false
                     } label: {
