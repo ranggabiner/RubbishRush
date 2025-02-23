@@ -1,17 +1,16 @@
 //
-//  HomeViewModel.swift
+//  PauseValidationViewModel.swift
 //  RubbishRush
 //
 //  Created by Rangga Biner on 20/02/25.
 //
 
+import Foundation
 import AVFoundation
-import SwiftUICore
-import SwiftUI
 
-class HomeViewModel: ObservableObject {
-    @Published var navigationPath = NavigationPath()
-    @Published var isPressed = false
+class PauseValidationViewModel: ObservableObject {
+    @Published var isPressedContinue = false
+    @Published var isPressedBackToHome = false
     var audioPlayer: AVAudioPlayer?
 
     func playSound() {

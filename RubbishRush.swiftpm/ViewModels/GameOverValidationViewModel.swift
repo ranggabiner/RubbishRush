@@ -1,17 +1,17 @@
 //
-//  HomeViewModel.swift
+//  GameOverValidationViewModel.swift
 //  RubbishRush
 //
-//  Created by Rangga Biner on 20/02/25.
+//  Created by Rangga Biner on 21/02/25.
 //
 
+import Foundation
 import AVFoundation
-import SwiftUICore
-import SwiftUI
 
-class HomeViewModel: ObservableObject {
-    @Published var navigationPath = NavigationPath()
-    @Published var isPressed = false
+
+class GameOverValidationViewModel: ObservableObject {
+    @Published var isPressedRestart = false
+    @Published var isPressedBackToHome = false
     var audioPlayer: AVAudioPlayer?
 
     func playSound() {
@@ -27,4 +27,5 @@ class HomeViewModel: ObservableObject {
             print("Failed to play sound: \(error.localizedDescription)")
         }
     }
+
 }
